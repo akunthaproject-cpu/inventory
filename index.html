@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f4c81">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Site Inventory</title>
+<style>
+:root{--brand:#0f4c81;--brand2:#1d6fb8;--bg:#f1f5f9;--card:#fff;--text:#0f172a;--muted:#64748b;--line:#e2e8f0;--ok:#15803d;--warn:#b45309;--bad:#b91c1c;--okbg:#dcfce7;--warnbg:#fef3c7;--badbg:#fee2e2}
+@media (prefers-color-scheme:dark){:root{--bg:#0b1220;--card:#111b2e;--text:#e5edf8;--muted:#8ea0b8;--line:#22324d;--brand:#1d6fb8;--brand2:#5aa2e6;--okbg:#10361f;--warnbg:#3b2a0b;--badbg:#3f1515;--ok:#4ade80;--warn:#fbbf24;--bad:#f87171}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{position:sticky;top:0;z-index:5;background:var(--brand);color:#fff;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:center;gap:10px}
+header h1{font-size:18px;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header button{background:rgba(255,255,255,.18);color:#fff;border:0;border-radius:8px;padding:6px 12px;font-size:15px}
+main{padding:12px 16px 96px;max-width:720px;margin:0 auto}
+nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:5}
+nav button{flex:1;border:0;background:none;color:var(--muted);padding:9px 2px 7px;font-size:12px;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button b{font-size:20px;line-height:1;font-weight:400}
+nav button.on{color:var(--brand2);font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 10px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.item{cursor:pointer}
+.item .t{font-weight:600}.item .s{color:var(--muted);font-size:14px}
+.big{font-size:20px;font-weight:700;white-space:nowrap}
+.pill{display:inline-block;border-radius:99px;padding:1px 9px;font-size:12px;font-weight:600}
+.pill.ok{background:var(--okbg);color:var(--ok)}.pill.low{background:var(--warnbg);color:var(--warn)}.pill.zero{background:var(--badbg);color:var(--bad)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.stats div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+.stats b{display:block;font-size:22px;color:var(--brand2)}.stats span{font-size:12px;color:var(--muted)}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 3px}
+input,select,textarea{width:100%;font:inherit;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text)}
+.btn{display:block;width:100%;border:0;border-radius:10px;background:var(--brand);color:#fff;font:inherit;font-weight:600;padding:13px;margin-top:14px}
+.btn.alt{background:var(--card);color:var(--brand2);border:1px solid var(--line)}
+.btn.del{background:var(--badbg);color:var(--bad)}
+.btn:disabled{opacity:.55}
+.seg{display:flex;gap:6px;overflow-x:auto;margin:0 0 10px;padding-bottom:2px}
+.seg button{flex:none;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:99px;padding:7px 14px;font:inherit;font-size:14px}
+.seg button.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+.muted{color:var(--muted)}.sm{font-size:13px}
+h2{font-size:15px;margin:16px 0 8px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.toast{position:fixed;left:16px;right:16px;bottom:calc(76px + env(safe-area-inset-bottom));padding:12px 14px;border-radius:10px;color:#fff;background:#166534;z-index:9;white-space:pre-line}
+.toast.err{background:#991b1b}
+.center{text-align:center;padding:30px 10px;color:var(--muted)}
+.spin{display:inline-block;width:22px;height:22px;border:3px solid var(--line);border-top-color:var(--brand2);border-radius:50%;animation:r 1s linear infinite}@keyframes r{to{transform:rotate(360deg)}}
+.menu a{display:flex;justify-content:space-between;padding:14px;border-bottom:1px solid var(--line);color:var(--text);text-decoration:none}
+.menu a:last-child{border:0}
+.lg{display:flex;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}.lg:last-child{border:0}
+.lg .d{width:72px;color:var(--muted);flex:none}.lg .m{flex:1}.lg .q{font-weight:600;white-space:nowrap}
+</style>
+</head>
+<body>
+<header><button id="bk" style="display:none" aria-label="Back">‹ Back</button><h1 id="ttl">Site Inventory</h1><button id="rf" aria-label="Refresh">⟳</button></header>
+<main id="main"></main>
+<nav id="nav" style="display:none">
+ <button data-t="home"><b>⌂</b>Home</button>
+ <button data-t="stock"><b>▦</b>Store</button>
+ <button data-t="sites"><b>⚑</b>At Sites</button>
+ <button data-t="entry"><b>＋</b>Entry</button>
+ <button data-t="more"><b>☰</b>More</button>
+</nav>
+<script>
+"use strict";
+/* ============ Neon access (HTTP SQL endpoint, works in any browser) ============ */
+const LS = (() => { try { localStorage.setItem("_t","1"); localStorage.removeItem("_t"); return localStorage } catch(e) { const m={}; return {getItem:k=>m[k]??null,setItem:(k,v)=>{m[k]=String(v)},removeItem:k=>{delete m[k]}} } })();
+let CONN = LS.getItem("neon_conn") || "";
+function parseConn(s){
+  s=(s||"").trim().replace(/^psql\s+/i,"").replace(/^['"]|['"]$/g,"").trim();
+  if(!/^postgres(ql)?:\/\//i.test(s)) throw new Error("The connection string must start with postgresql://");
+  const u=new URL(s.replace(/^postgres(ql)?:/i,"http:"));
+  if(!u.hostname||!u.username||!u.password) throw new Error("The connection string needs a user, password and host.");
+  return {str:s, host:u.hostname, db:u.pathname.replace(/^\//,"")||"neondb"};
+}
+function endpoint(){ const c=parseConn(CONN); return c.host.includes("localhost")||c.host==="127.0.0.1" ? "http://"+c.host+(new URL(CONN.replace(/^postgres(ql)?:/i,"http:")).port?":"+new URL(CONN.replace(/^postgres(ql)?:/i,"http:")).port:"")+"/sql" : "https://"+c.host+"/sql"; }
+async function http(body){
+  const c=parseConn(CONN); let last;
+  for(let i=0;i<3;i++){
+    try{
+      const r=await fetch(endpoint(),{method:"POST",headers:{"Content-Type":"application/json","Neon-Connection-String":c.str,"Neon-Raw-Text-Output":"true","Neon-Array-Mode":"true"},body:JSON.stringify(body)});
+      const j=await r.json().catch(()=>({}));
+      if(!r.ok){ const e=new Error(j.message||("Server error "+r.status)); e.code=j.code; e.server=true; throw e; }
+      return j;
+    }catch(e){ if(e.server) throw e; last=e; await new Promise(r=>setTimeout(r,1500)); }
+  }
+  throw new Error("Cannot reach the database. Check your internet and try again.\n(If it was idle, Neon may need a few seconds to wake up.)");
+}
+function shape(res){ const f=res.fields.map(x=>x.name); return (res.rows||[]).map(r=>{const o={}; f.forEach((n,i)=>o[n]=r[i]); return o;}); }
+async function q(sql,params=[]){ return shape(await http({query:sql,params})); }
+async function batch(list){ const j=await http({queries:list.map(([query,params])=>({query,params:params||[]}))}); return j.results.map(shape); }
+const num=v=>v==null?0:Number(v);
+function friendly(e){
+  const m=(e.message||String(e)).replace(/\s*\(SQLSTATE \w+\)\s*$/,"");
+  if(e.code==="23505"||/duplicate key/.test(m)) return "That name / code already exists.";
+  if(e.code==="23503") return "That record is used elsewhere and cannot be changed or removed.";
+  if(/^STOCK:/.test(m.replace(/^.*?(STOCK:)/s,"$1"))) return m.replace(/^.*?STOCK:\s*/s,"");
+  if(/password authentication/i.test(m)) return "Wrong user or password in the connection string.";
+  return m;
+}
+
+/* ============ schema (same as the Windows program) ============ */
+const SCHEMA=[
+`CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,value TEXT)`,
+`CREATE TABLE IF NOT EXISTS projects(id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,code TEXT NOT NULL,name TEXT NOT NULL,client TEXT NOT NULL DEFAULT '',location TEXT NOT NULL DEFAULT '',start_date TEXT NOT NULL DEFAULT '',status TEXT NOT NULL DEFAULT 'Active',remarks TEXT NOT NULL DEFAULT '')`,
+`CREATE UNIQUE INDEX IF NOT EXISTS ux_projects_code ON projects(lower(code))`,
+`CREATE UNIQUE INDEX IF NOT EXISTS ux_projects_name ON projects(lower(name))`,
+`CREATE TABLE IF NOT EXISTS sites(id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,project_id BIGINT NOT NULL REFERENCES projects(id),name TEXT NOT NULL,location TEXT NOT NULL DEFAULT '',status TEXT NOT NULL DEFAULT 'Active',remarks TEXT NOT NULL DEFAULT '')`,
+`CREATE UNIQUE INDEX IF NOT EXISTS ux_sites_name ON sites(project_id,lower(name))`,
+`CREATE TABLE IF NOT EXISTS supervisors(id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,name TEXT NOT NULL,phone TEXT NOT NULL DEFAULT '',active INTEGER NOT NULL DEFAULT 1,remarks TEXT NOT NULL DEFAULT '')`,
+`CREATE UNIQUE INDEX IF NOT EXISTS ux_supervisors_name ON supervisors(lower(name))`,
+`CREATE TABLE IF NOT EXISTS assignments(id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,site_id BIGINT NOT NULL REFERENCES sites(id),supervisor_id BIGINT NOT NULL REFERENCES supervisors(id),from_date TEXT NOT NULL,to_date TEXT,remarks TEXT NOT NULL DEFAULT '')`,
+`CREATE TABLE IF NOT EXISTS items(id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,name TEXT NOT NULL,unit TEXT NOT NULL DEFAULT 'Nos',category TEXT NOT NULL DEFAULT '',min_stock DOUBLE PRECISION NOT NULL DEFAULT 0,remarks TEXT NOT NULL DEFAULT '')`,
+`CREATE UNIQUE INDEX IF NOT EXISTS ux_items_name ON items(lower(name))`,
+`CREATE TABLE IF NOT EXISTS purchases(id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,date TEXT NOT NULL,item_id BIGINT NOT NULL REFERENCES items(id),qty DOUBLE PRECISION NOT NULL CHECK(qty>0),rate DOUBLE PRECISION NOT NULL DEFAULT 0,vendor TEXT NOT NULL DEFAULT '',invoice TEXT NOT NULL DEFAULT '',contact TEXT NOT NULL DEFAULT '',project_id BIGINT REFERENCES projects(id),remark TEXT NOT NULL DEFAULT '')`,
+`CREATE TABLE IF NOT EXISTS issues(id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,date TEXT NOT NULL,site_id BIGINT NOT NULL REFERENCES sites(id),supervisor_id BIGINT REFERENCES supervisors(id),item_id BIGINT NOT NULL REFERENCES items(id),qty DOUBLE PRECISION NOT NULL CHECK(qty>0),remark TEXT NOT NULL DEFAULT '')`,
+`CREATE TABLE IF NOT EXISTS site_returns(id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,date TEXT NOT NULL,site_id BIGINT NOT NULL REFERENCES sites(id),item_id BIGINT NOT NULL REFERENCES items(id),qty DOUBLE PRECISION NOT NULL CHECK(qty>0),remark TEXT NOT NULL DEFAULT '')`,
+`CREATE TABLE IF NOT EXISTS consumptions(id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,date TEXT NOT NULL,site_id BIGINT NOT NULL REFERENCES sites(id),item_id BIGINT NOT NULL REFERENCES items(id),qty DOUBLE PRECISION NOT NULL CHECK(qty>0),remark TEXT NOT NULL DEFAULT '')`,
+`CREATE INDEX IF NOT EXISTS ix_issues_site ON issues(site_id,item_id)`,
+`CREATE INDEX IF NOT EXISTS ix_issues_item ON issues(item_id)`,
+`CREATE INDEX IF NOT EXISTS ix_pur_item ON purchases(item_id)`,
+`CREATE INDEX IF NOT EXISTS ix_ret_site ON site_returns(site_id,item_id)`,
+`CREATE INDEX IF NOT EXISTS ix_con_site ON consumptions(site_id,item_id)`,
+`CREATE INDEX IF NOT EXISTS ix_asg_site ON assignments(site_id)`,
+`CREATE OR REPLACE FUNCTION dmy(d text) RETURNS text AS $$ SELECT CASE WHEN d ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' THEN substr(d,9,2) || '-' || substr(d,6,2) || '-' || substr(d,1,4) ELSE COALESCE(d,'') END $$ LANGUAGE sql IMMUTABLE`,
+`CREATE OR REPLACE VIEW v_store AS SELECT i.id AS item_id,i.name AS name,i.unit AS unit,i.category AS category,i.min_stock AS min_stock,COALESCE((SELECT SUM(qty) FROM purchases WHERE item_id=i.id),0) AS purchased,COALESCE((SELECT SUM(qty) FROM issues WHERE item_id=i.id),0) AS issued,COALESCE((SELECT SUM(qty) FROM site_returns WHERE item_id=i.id),0) AS returned FROM items i`,
+`CREATE OR REPLACE VIEW v_site_item AS SELECT k.site_id AS site_id,k.item_id AS item_id,COALESCE((SELECT SUM(qty) FROM issues WHERE site_id=k.site_id AND item_id=k.item_id),0) AS issued,COALESCE((SELECT SUM(qty) FROM site_returns WHERE site_id=k.site_id AND item_id=k.item_id),0) AS returned,COALESCE((SELECT SUM(qty) FROM consumptions WHERE site_id=k.site_id AND item_id=k.item_id),0) AS consumed FROM (SELECT site_id,item_id FROM issues UNION SELECT site_id,item_id FROM site_returns UNION SELECT site_id,item_id FROM consumptions) k`,
+`CREATE OR REPLACE VIEW v_current_supervisor AS SELECT a.site_id AS site_id,a.supervisor_id AS supervisor_id,a.from_date AS from_date FROM assignments a WHERE a.to_date IS NULL`,
+`INSERT INTO settings(key,value) VALUES('schema_version','2') ON CONFLICT(key) DO UPDATE SET value=excluded.value`,
+`INSERT INTO settings(key,value) VALUES('company','My Company') ON CONFLICT(key) DO NOTHING`
+];
+const CHECK_FN=`CREATE OR REPLACE FUNCTION inv_check() RETURNS int AS $$
+DECLARE a text; b text;
+BEGIN
+  SELECT name INTO a FROM v_store WHERE purchased-issued+returned < -0.0000001 LIMIT 1;
+  IF a IS NOT NULL THEN RAISE EXCEPTION 'STOCK: This would make the store stock of ''%'' negative.', a; END IF;
+  SELECT s.name, i.name INTO a, b FROM v_site_item v JOIN sites s ON s.id=v.site_id JOIN items i ON i.id=v.item_id WHERE v.issued-v.returned-v.consumed < -0.0000001 LIMIT 1;
+  IF a IS NOT NULL THEN RAISE EXCEPTION 'STOCK: This would make ''%'' at site ''%'' negative. Returned / consumed cannot exceed what is at the site.', b, a; END IF;
+  RETURN 1;
+END $$ LANGUAGE plpgsql`;
+async function ensureSchema(){
+  let ok=false;
+  try{ const r=await q(`SELECT (SELECT value FROM settings WHERE key='schema_version') v, (SELECT value FROM settings WHERE key='mobile_fn') f`); ok=r[0]&&r[0].v==="2"&&r[0].f==="1"; }catch(e){ if(e.server&&e.code!=="42P01") throw e; }
+  if(ok) return;
+  await batch([...SCHEMA.map(s=>[s]),[CHECK_FN],[`INSERT INTO settings(key,value) VALUES('mobile_fn','1') ON CONFLICT(key) DO UPDATE SET value='1'`]]);
+}
+/* every change runs in one transaction under a global lock, then the stock rules are verified */
+async function write(stmts){ await batch([[`SELECT pg_advisory_xact_lock(7241001)`],...stmts,[`SELECT inv_check()`]]); }
+
+/* ============ helpers ============ */
+const $=s=>document.querySelector(s), main=$("#main");
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fq=v=>{v=Math.round(num(v)*1e6)/1e6; return String(v)};
+const today=()=>{const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10)};
+const dmy=d=>/^\d{4}-\d\d-\d\d$/.test(d||"")?d.slice(8)+"-"+d.slice(5,7)+"-"+d.slice(0,4):(d||"");
+const money=v=>num(v).toFixed(2);
+function toast(msg,err){ const t=document.createElement("div"); t.className="toast"+(err?" err":""); t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),err?5000:2200); }
+const loading=()=>{main.innerHTML='<div class="center"><span class="spin"></span><p>Loading…</p></div>'};
+const opts=(rows,sel,ph)=>(ph?`<option value="">${esc(ph)}</option>`:"")+rows.map(r=>`<option value="${esc(r.v)}"${String(r.v)===String(sel)?" selected":""}>${esc(r.t)}</option>`).join("");
+const pill=(st)=>st==="zero"?'<span class="pill zero">Out of stock</span>':st==="low"?'<span class="pill low">Low stock</span>':"";
+
+/* ============ navigation ============ */
+let tab="home", stack=[];
+function setTitle(t){ $("#ttl").textContent=t; document.title=t; }
+function go(fn,{push=true}={}){ if(push&&cur) stack.push(cur); cur=fn; fn(); window.scrollTo(0,0); $("#bk").style.display=stack.length?"":"none"; }
+let cur=null;
+function goTab(t){ tab=t; stack=[]; document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.t===t)); const m={home:vHome,stock:vStock,sites:vSites,entry:vEntry,more:vMore}; cur=null; go(m[t],{push:false}); }
+$("#bk").onclick=()=>{ cur=stack.pop(); $("#bk").style.display=stack.length?"":"none"; cur&&cur(); };
+$("#rf").onclick=()=>{ cur&&cur(); };
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>goTab(b.dataset.t));
+async function guard(fn){ try{ await fn(); }catch(e){ main.innerHTML=`<div class="card"><b>Problem</b><p style="white-space:pre-line">${esc(friendly(e))}</p><button class="btn" onclick="cur&&cur()">Try again</button></div>`; } }
+
+/* ============ setup ============ */
+function vSetup(msg){
+  $("#nav").style.display="none"; $("#bk").style.display="none"; setTitle("Connect to Database");
+  main.innerHTML=`<div class="card"><p>Paste the <b>Neon connection string</b> (the same one used by the Windows program). It starts with <code>postgresql://</code>.</p>
+  <label>Connection string</label><textarea id="cs" rows="4" placeholder="postgresql://user:password@ep-xxxx.region.aws.neon.tech/neondb?sslmode=require"></textarea>
+  <button class="btn" id="go">Test and Connect</button><p id="msg" class="sm" style="color:var(--bad);white-space:pre-line">${esc(msg||"")}</p>
+  <p class="muted sm">Find it in console.neon.tech → your project → Connect. It is saved only on this phone.</p></div>`;
+  $("#go").onclick=async()=>{ const b=$("#go"); b.disabled=true; b.textContent="Connecting… (up to 20 sec)"; try{ CONN=$("#cs").value; parseConn(CONN); CONN=parseConn(CONN).str; await ensureSchema(); LS.setItem("neon_conn",CONN); start(); }catch(e){ CONN=LS.getItem("neon_conn")||""; $("#msg").textContent=friendly(e); b.disabled=false; b.textContent="Test and Connect"; } };
+}
+function start(){ $("#nav").style.display="flex"; goTab("home"); }
+
+/* ============ views ============ */
+async function vHome(){ setTitle("Site Inventory"); loading(); guard(async()=>{
+  const [c,low,proj,co]=await Promise.all([
+   q(`SELECT (SELECT COUNT(*) FROM projects) p,(SELECT COUNT(*) FROM sites) s,(SELECT COUNT(*) FROM supervisors WHERE active=1) v,(SELECT COUNT(*) FROM items) i,(SELECT COUNT(*) FROM v_store WHERE purchased-issued+returned<=0 OR (min_stock>0 AND purchased-issued+returned<=min_stock)) l`),
+   q(`SELECT name,unit,purchased-issued+returned AS qty,min_stock FROM v_store WHERE purchased-issued+returned<=0 OR (min_stock>0 AND purchased-issued+returned<=min_stock) ORDER BY name LIMIT 8`),
+   q(`SELECT p.name,(SELECT COUNT(*) FROM sites s WHERE s.project_id=p.id) sites,COALESCE((SELECT SUM(v.issued-v.returned-v.consumed) FROM v_site_item v JOIN sites s ON s.id=v.site_id WHERE s.project_id=p.id),0) atsite FROM projects p ORDER BY p.name`),
+   q(`SELECT value FROM settings WHERE key='company'`)]);
+  const k=c[0]; if(co[0]) setTitle(co[0].value||"Site Inventory");
+  main.innerHTML=`<div class="stats"><div><b>${k.p}</b><span>Projects</span></div><div><b>${k.s}</b><span>Sites</span></div><div><b>${k.v}</b><span>Supervisors</span></div></div>
+  <div class="stats"><div><b>${k.i}</b><span>Items</span></div><div><b style="color:${num(k.l)?"var(--warn)":"var(--ok)"}">${k.l}</b><span>Low / out</span></div><div><b>${proj.reduce((a,r)=>a+num(r.atsite),0)?"●":"–"}</b><span>Material out</span></div></div>
+  ${low.length?`<h2>Needs attention</h2>`+low.map(r=>`<div class="card"><div class="row"><div><div class="t">${esc(r.name)}</div><div class="s">Min ${fq(r.min_stock)} ${esc(r.unit)}</div></div><div class="big">${fq(r.qty)} <span class="sm muted">${esc(r.unit)}</span></div></div></div>`).join(""):""}
+  <h2>Projects</h2>${proj.length?proj.map(r=>`<div class="card"><div class="row"><div><div class="t">${esc(r.name)}</div><div class="s">${r.sites} site(s)</div></div><div class="sm muted">${fq(r.atsite)} qty at sites</div></div></div>`).join(""):'<div class="center">No projects yet. Add one from More.</div>'}`;
+ }); }
+
+let stockSearch="",stockLow=false;
+async function vStock(){ setTitle("Store Stock"); loading(); guard(async()=>{
+  const rows=await q(`SELECT item_id,name,unit,category,purchased,issued,returned,purchased-issued+returned qty,min_stock,CASE WHEN purchased-issued+returned<=0 THEN 'zero' WHEN min_stock>0 AND purchased-issued+returned<=min_stock THEN 'low' ELSE '' END st FROM v_store ORDER BY name`);
+  main.innerHTML=`<input id="se" type="search" placeholder="Search item…" value="${esc(stockSearch)}"><div class="seg" style="margin-top:8px"><button data-l="0" class="${stockLow?"":"on"}">All</button><button data-l="1" class="${stockLow?"on":""}">Low / out only</button></div><div id="ls"></div>`;
+  const draw=()=>{ const s=stockSearch.toLowerCase(); const f=rows.filter(r=>(r.name+" "+r.category).toLowerCase().includes(s)&&(!stockLow||r.st)); $("#ls").innerHTML=f.length?f.map(r=>`<div class="card item" data-id="${r.item_id}"><div class="row"><div><div class="t">${esc(r.name)}</div><div class="s">${esc(r.category)} ${pill(r.st)}</div></div><div class="big">${fq(r.qty)} <span class="sm muted">${esc(r.unit)}</span></div></div></div>`).join(""):'<div class="center">Nothing found.</div>'; document.querySelectorAll("#ls .item").forEach(e=>e.onclick=()=>go(()=>vItemLedger(e.dataset.id))); };
+  $("#se").oninput=e=>{stockSearch=e.target.value;draw()}; document.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{stockLow=b.dataset.l==="1";vStock()}); draw();
+ }); }
+async function vItemLedger(id){ loading(); guard(async()=>{
+  const [it,rows]=await Promise.all([q(`SELECT name,unit,purchased-issued+returned qty FROM v_store WHERE item_id=$1`,[id]),
+   q(`SELECT date,typ,who,inq,outq,id FROM (SELECT date,'Purchase' typ,COALESCE(NULLIF(vendor,''),'-') who,qty inq,0.0 outq,id,1 o FROM purchases WHERE item_id=$1 UNION ALL SELECT x.date,'Issue',s.name,0.0,x.qty,x.id,2 FROM issues x JOIN sites s ON s.id=x.site_id WHERE x.item_id=$1 UNION ALL SELECT x.date,'Return',s.name,x.qty,0.0,x.id,3 FROM site_returns x JOIN sites s ON s.id=x.site_id WHERE x.item_id=$1) t ORDER BY date,o,id`,[id])]);
+  setTitle(it[0].name); let bal=0;
+  main.innerHTML=`<div class="card row"><span class="muted">In store now</span><span class="big">${fq(it[0].qty)} ${esc(it[0].unit)}</span></div><div class="card">${rows.length?rows.map(r=>{bal+=num(r.inq)-num(r.outq);return `<div class="lg"><div class="d">${dmy(r.date)}</div><div class="m">${r.typ}<br><span class="muted">${esc(r.who)}</span></div><div class="q">${num(r.inq)?"+"+fq(r.inq):"−"+fq(r.outq)}<br><span class="muted sm">bal ${fq(bal)}</span></div></div>`}).join(""):'<div class="center">No movements yet.</div>'}</div>`;
+ }); }
+
+let siteSearch="",siteProj="",siteAll=false;
+async function vSites(){ setTitle("Material at Sites"); loading(); guard(async()=>{
+  const [rows,proj]=await Promise.all([q(`SELECT s.id sid,p.id pid,p.name pn,s.name sn,COALESCE(sv.name,'-- no supervisor --') sv,i.name iname,i.unit,v.issued,v.returned,v.consumed,v.issued-v.returned-v.consumed bal FROM v_site_item v JOIN sites s ON s.id=v.site_id JOIN projects p ON p.id=s.project_id JOIN items i ON i.id=v.item_id LEFT JOIN v_current_supervisor c ON c.site_id=s.id LEFT JOIN supervisors sv ON sv.id=c.supervisor_id ORDER BY p.name,s.name,i.name`),q(`SELECT id,name FROM projects ORDER BY name`)]);
+  main.innerHTML=`<input id="se" type="search" placeholder="Search item or site…" value="${esc(siteSearch)}"><select id="pf" style="margin-top:8px">${opts(proj.map(p=>({v:p.id,t:p.name})),siteProj,"All projects")}</select><div class="seg" style="margin-top:8px"><button data-a="0" class="${siteAll?"":"on"}">With balance</button><button data-a="1" class="${siteAll?"on":""}">All lines</button></div><div id="ls"></div>`;
+  const draw=()=>{ const s=siteSearch.toLowerCase(); const f=rows.filter(r=>(!siteProj||r.pid===siteProj)&&(r.iname+" "+r.sn).toLowerCase().includes(s)&&(siteAll||num(r.bal)>1e-7)); let last="",h=""; f.forEach(r=>{ const key=r.sid; if(key!==last){ h+=`<h2 class="item" data-s="${r.sid}">${esc(r.pn)} › ${esc(r.sn)} <span style="text-transform:none;font-weight:400">(${esc(r.sv)})</span></h2>`; last=key; } h+=`<div class="card"><div class="row"><div><div class="t">${esc(r.iname)}</div><div class="s">Issued ${fq(r.issued)} · Ret ${fq(r.returned)} · Used ${fq(r.consumed)}</div></div><div class="big">${fq(r.bal)} <span class="sm muted">${esc(r.unit)}</span></div></div></div>`; }); $("#ls").innerHTML=h||'<div class="center">Nothing found.</div>'; document.querySelectorAll("#ls h2.item").forEach(e=>e.onclick=()=>go(()=>vSiteLedger(e.dataset.s))); };
+  $("#se").oninput=e=>{siteSearch=e.target.value;draw()}; $("#pf").onchange=e=>{siteProj=e.target.value;draw()}; document.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{siteAll=b.dataset.a==="1";vSites()}); draw();
+ }); }
+async function vSiteLedger(id){ loading(); guard(async()=>{
+  const [s,rows]=await Promise.all([q(`SELECT s.name,p.name pn FROM sites s JOIN projects p ON p.id=s.project_id WHERE s.id=$1`,[id]),
+   q(`SELECT date,typ,item,unit,qty,note FROM (SELECT x.date,'Issued' typ,i.name item,i.unit,x.qty,COALESCE(sv.name,'') note,1 o,x.id FROM issues x JOIN items i ON i.id=x.item_id LEFT JOIN supervisors sv ON sv.id=x.supervisor_id WHERE x.site_id=$1 UNION ALL SELECT x.date,'Returned',i.name,i.unit,x.qty,x.remark,2,x.id FROM site_returns x JOIN items i ON i.id=x.item_id WHERE x.site_id=$1 UNION ALL SELECT x.date,'Consumed',i.name,i.unit,x.qty,x.remark,3,x.id FROM consumptions x JOIN items i ON i.id=x.item_id WHERE x.site_id=$1) t ORDER BY date DESC,o,id DESC`,[id])]);
+  setTitle(s[0].name); main.innerHTML=`<p class="muted">${esc(s[0].pn)} — all movements, newest first</p><div class="card">${rows.length?rows.map(r=>`<div class="lg"><div class="d">${dmy(r.date)}</div><div class="m">${esc(r.item)}<br><span class="muted">${r.typ}${r.note?" · "+esc(r.note):""}</span></div><div class="q">${fq(r.qty)} ${esc(r.unit)}</div></div>`).join(""):'<div class="center">No movements yet.</div>'}</div>`;
+ }); }
+
+/* ---------- entries ---------- */
+function vEntry(){ setTitle("New Entry"); main.innerHTML=`<div class="card menu">
+ <a href="#" data-e="purchase"><span>🛒 Purchase (into store)</span><span>›</span></a>
+ <a href="#" data-e="issue"><span>📦 Issue material to site</span><span>›</span></a>
+ <a href="#" data-e="return"><span>↩ Return from site</span><span>›</span></a>
+ <a href="#" data-e="consume"><span>🔧 Used / consumed at site</span><span>›</span></a></div>`;
+ document.querySelectorAll(".menu a").forEach(a=>a.onclick=e=>{e.preventDefault(); const k=a.dataset.e; go(()=>vForm(k))}); }
+
+async function loadLookups(){ const [items,sites,projects,sups]=await Promise.all([
+  q(`SELECT item_id id,name,unit,purchased-issued+returned qty FROM v_store ORDER BY name`),
+  q(`SELECT s.id,s.name,p.name pn,c.supervisor_id sup,sv.name svn FROM sites s JOIN projects p ON p.id=s.project_id LEFT JOIN v_current_supervisor c ON c.site_id=s.id LEFT JOIN supervisors sv ON sv.id=c.supervisor_id ORDER BY p.name,s.name`),
+  q(`SELECT id,name FROM projects ORDER BY name`), q(`SELECT id,name FROM supervisors WHERE active=1 ORDER BY name`)]); return {items,sites,projects,sups}; }
+
+function vForm(kind){ const T={purchase:"Purchase Entry",issue:"Issue to Site",return:"Return from Site",consume:"Used at Site"}; setTitle(T[kind]); loading(); guard(async()=>{
+  const L=await loadLookups(); let siteItems=null;
+  const siteOpts=L.sites.map(s=>({v:s.id,t:`${s.pn} › ${s.name}${s.svn?" ("+s.svn+")":""}`}));
+  const itemOpts=L.items.map(i=>({v:i.id,t:`${i.name} — store ${fq(i.qty)} ${i.unit}`}));
+  main.innerHTML=`<div class="card"><label>Date</label><input type="date" id="f_date" value="${today()}">
+  ${kind!=="purchase"?`<label>Site</label><select id="f_site">${opts(siteOpts,"","Select site…")}</select><div id="sv" class="sm muted"></div>`:""}
+  <label>Item</label><select id="f_item">${kind==="purchase"||kind==="issue"?opts(itemOpts,"","Select item…"):'<option value="">Select a site first</option>'}</select><div id="av" class="sm muted"></div>
+  <label>Quantity</label><input type="number" id="f_qty" inputmode="decimal" step="any" min="0">
+  ${kind==="purchase"?`<label>Rate (optional)</label><input type="number" id="f_rate" inputmode="decimal" step="any" min="0"><label>Vendor</label><input id="f_vendor"><label>Invoice no.</label><input id="f_inv"><label>Project (optional)</label><select id="f_proj">${opts(L.projects.map(p=>({v:p.id,t:p.name})),"","— none —")}</select>`:""}
+  <label>Remark</label><input id="f_rem"><button class="btn" id="sv_btn">Save</button></div>`;
+  const itemsOf=async()=>{ const sid=$("#f_site").value; $("#f_item").innerHTML='<option value="">Select item…</option>'; $("#av").textContent=""; if(!sid){return} const rows=await q(`SELECT i.id,i.name,i.unit,v.issued-v.returned-v.consumed bal FROM v_site_item v JOIN items i ON i.id=v.item_id WHERE v.site_id=$1 AND v.issued-v.returned-v.consumed>0.0000001 ORDER BY i.name`,[sid]); siteItems=rows; $("#f_item").innerHTML=opts(rows.map(r=>({v:r.id,t:`${r.name} — at site ${fq(r.bal)} ${r.unit}`})),"", rows.length?"Select item…":"No material at this site"); };
+  if(kind!=="purchase"){ $("#f_site").onchange=async()=>{ const s=L.sites.find(x=>String(x.id)===$("#f_site").value); $("#sv").textContent=s?(s.svn?"Supervisor: "+s.svn:"⚠ No supervisor assigned yet"):""; if(kind==="return"||kind==="consume"){ try{await itemsOf()}catch(e){toast(friendly(e),1)} } }; }
+  $("#f_item").onchange=()=>{ const id=$("#f_item").value; let t=""; if(kind==="purchase"||kind==="issue"){const i=L.items.find(x=>String(x.id)===id); if(i) t=`In store: ${fq(i.qty)} ${i.unit}`;} else if(siteItems){const i=siteItems.find(x=>String(x.id)===id); if(i) t=`At site: ${fq(i.bal)} ${i.unit}`;} $("#av").textContent=t; };
+  $("#sv_btn").onclick=async()=>{ const b=$("#sv_btn"); try{
+    const date=$("#f_date").value, item=$("#f_item").value, qty=parseFloat($("#f_qty").value), rem=$("#f_rem").value.trim(); const site=kind!=="purchase"?$("#f_site").value:null;
+    if(!date) throw new Error("Please enter the date."); if(kind!=="purchase"&&!site) throw new Error("Please select the site."); if(!item) throw new Error("Please select the item."); if(!(qty>0)) throw new Error("Quantity must be greater than zero.");
+    let st;
+    if(kind==="purchase") st=[`INSERT INTO purchases(date,item_id,qty,rate,vendor,invoice,contact,project_id,remark) VALUES($1,$2::bigint,$3::float8,$4::float8,$5,$6,'',NULLIF($7,'')::bigint,$8)`,[date,item,qty,parseFloat($("#f_rate").value)||0,$("#f_vendor").value.trim(),$("#f_inv").value.trim(),$("#f_proj").value,rem]];
+    else if(kind==="issue"){ const s=L.sites.find(x=>String(x.id)===site); if(!s||!s.sup) throw new Error("This site has no supervisor yet.\nAssign one from More › Assign Site."); st=[`INSERT INTO issues(date,site_id,supervisor_id,item_id,qty,remark) VALUES($1,$2::bigint,(SELECT supervisor_id FROM v_current_supervisor WHERE site_id=$2::bigint),$3::bigint,$4::float8,$5)`,[date,site,item,qty,rem]]; }
+    else st=[`INSERT INTO ${kind==="return"?"site_returns":"consumptions"}(date,site_id,item_id,qty,remark) VALUES($1,$2::bigint,$3::bigint,$4::float8,$5)`,[date,site,item,qty,rem]];
+    b.disabled=true; b.textContent="Saving…"; await write([st]); toast("Saved ✓"); stack=[]; vForm(kind);
+  }catch(e){ toast(friendly(e),1); b.disabled=false; b.textContent="Save"; } };
+ }); }
+
+/* ---------- more ---------- */
+function vMore(){ setTitle("More"); main.innerHTML=`<div class="card menu">
+ <a href="#" data-m="recent"><span>🕘 Recent entries (undo mistakes)</span><span>›</span></a>
+ <a href="#" data-m="sup"><span>👷 Supervisors &amp; their material</span><span>›</span></a>
+ <a href="#" data-m="assign"><span>🔗 Assign site to supervisor</span><span>›</span></a>
+ <a href="#" data-m="project"><span>➕ Add project</span><span>›</span></a>
+ <a href="#" data-m="site"><span>➕ Add site to project</span><span>›</span></a>
+ <a href="#" data-m="supervisor"><span>➕ Add supervisor</span><span>›</span></a>
+ <a href="#" data-m="item"><span>➕ Add item</span><span>›</span></a>
+ <a href="#" data-m="settings"><span>⚙ Database &amp; settings</span><span>›</span></a></div>`;
+ const m={recent:vRecent,sup:vSup,assign:vAssign,project:vAddProject,site:vAddSite,supervisor:vAddSup,item:vAddItem,settings:vSettings};
+ document.querySelectorAll(".menu a").forEach(a=>a.onclick=e=>{e.preventDefault(); go(m[a.dataset.m])}); }
+
+async function vSup(){ setTitle("Supervisors"); loading(); guard(async()=>{
+  const rows=await q(`SELECT sv.name svn,sv.phone,p.name pn,s.name sn,i.name iname,i.unit,v.issued-v.returned-v.consumed bal FROM supervisors sv LEFT JOIN v_current_supervisor c ON c.supervisor_id=sv.id LEFT JOIN sites s ON s.id=c.site_id LEFT JOIN projects p ON p.id=s.project_id LEFT JOIN v_site_item v ON v.site_id=s.id AND v.issued-v.returned-v.consumed>0.0000001 LEFT JOIN items i ON i.id=v.item_id WHERE sv.active=1 ORDER BY sv.name,p.name,s.name,i.name`);
+  const by={}; rows.forEach(r=>{(by[r.svn]??={phone:r.phone,l:[]}).l.push(r)});
+  main.innerHTML=Object.keys(by).length?Object.entries(by).map(([n,o])=>`<div class="card"><div class="row"><div class="t">${esc(n)}</div>${o.phone?`<a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>`:""}</div>${o.l.filter(r=>r.sn).map(r=>r.iname?`<div class="lg"><div class="m">${esc(r.sn)} · ${esc(r.iname)}</div><div class="q">${fq(r.bal)} ${esc(r.unit)}</div></div>`:`<div class="lg"><div class="m">${esc(r.sn)} <span class="muted">(no material)</span></div></div>`).join("")||'<div class="sm muted">No sites assigned.</div>'}</div>`).join(""):'<div class="center">No supervisors yet.</div>'; }); }
+
+async function vRecent(){ setTitle("Recent entries"); loading(); guard(async()=>{
+  const rows=await q(`SELECT * FROM (SELECT 'purchases' t,'Purchase' lbl,x.id,x.date,i.name item,i.unit,x.qty,COALESCE(NULLIF(x.vendor,''),'') who FROM purchases x JOIN items i ON i.id=x.item_id UNION ALL SELECT 'issues','Issue',x.id,x.date,i.name,i.unit,x.qty,s.name FROM issues x JOIN items i ON i.id=x.item_id JOIN sites s ON s.id=x.site_id UNION ALL SELECT 'site_returns','Return',x.id,x.date,i.name,i.unit,x.qty,s.name FROM site_returns x JOIN items i ON i.id=x.item_id JOIN sites s ON s.id=x.site_id UNION ALL SELECT 'consumptions','Used',x.id,x.date,i.name,i.unit,x.qty,s.name FROM consumptions x JOIN items i ON i.id=x.item_id JOIN sites s ON s.id=x.site_id) a ORDER BY date DESC,id DESC LIMIT 40`);
+  main.innerHTML=rows.length?rows.map((r,n)=>`<div class="card"><div class="row"><div><div class="t">${esc(r.item)}</div><div class="s">${r.lbl} · ${dmy(r.date)}${r.who?" · "+esc(r.who):""}</div></div><div class="big">${fq(r.qty)}</div></div><button class="btn del" data-n="${n}" style="margin-top:8px;padding:8px">Delete</button></div>`).join(""):'<div class="center">No entries yet.</div>';
+  document.querySelectorAll("button.del").forEach(b=>b.onclick=async()=>{ const r=rows[b.dataset.n]; if(!confirm(`Delete this ${r.lbl.toLowerCase()} of ${fq(r.qty)} ${r.unit} ${r.item}?`)) return; try{ await write([[`DELETE FROM ${r.t} WHERE id=$1::bigint`,[r.id]]]); toast("Deleted"); vRecent(); }catch(e){ toast(friendly(e),1); } }); }); }
+
+async function simpleForm(title,html,onSave,after){ setTitle(title); loading(); await guard(async()=>{ const ctx=after?await after():null; main.innerHTML=`<div class="card">${typeof html==="function"?html(ctx):html}<button class="btn" id="sv_btn">Save</button></div>`; $("#sv_btn").onclick=async()=>{ const b=$("#sv_btn"); try{ b.disabled=true; await onSave(ctx); toast("Saved ✓"); stack.pop(); $("#bk").style.display=stack.length?"":"none"; cur=stack.length?stack[stack.length-1]:null; go(vMore,{push:false}); stack=[]; $("#bk").style.display="none"; }catch(e){ toast(friendly(e),1); b.disabled=false; } }; }); }
+const V=id=>$("#"+id).value.trim();
+const need=(v,m)=>{ if(!v) throw new Error(m); return v; };
+function vAddProject(){ simpleForm("Add Project",`<label>Project code *</label><input id="a1"><label>Project name *</label><input id="a2"><label>Client</label><input id="a3"><label>Location</label><input id="a4">`,()=>write([[`INSERT INTO projects(code,name,client,location,start_date) VALUES($1,$2,$3,$4,$5)`,[need(V("a1"),"Project code is required."),need(V("a2"),"Project name is required."),V("a3"),V("a4"),today()]]])); }
+function vAddSite(){ simpleForm("Add Site",c=>`<label>Project *</label><select id="a1">${opts(c.map(p=>({v:p.id,t:p.name})),"","Select project…")}</select><label>Site name *</label><input id="a2"><label>Location</label><input id="a3">`,()=>write([[`INSERT INTO sites(project_id,name,location) VALUES($1::bigint,$2,$3)`,[need(V("a1"),"Please select the project."),need(V("a2"),"Site name is required."),V("a3")]]]),()=>q(`SELECT id,name FROM projects ORDER BY name`)); }
+function vAddSup(){ simpleForm("Add Supervisor",`<label>Name *</label><input id="a1"><label>Phone</label><input id="a2" type="tel">`,()=>write([[`INSERT INTO supervisors(name,phone) VALUES($1,$2)`,[need(V("a1"),"Name is required."),V("a2")]]])); }
+function vAddItem(){ simpleForm("Add Item",`<label>Item name *</label><input id="a1"><label>Unit</label><input id="a2" value="Nos" list="un"><datalist id="un"><option>Nos<option>Kg<option>Mtr<option>Bag<option>Ltr<option>Box<option>Set</datalist><label>Category</label><input id="a3"><label>Minimum stock (alert level)</label><input id="a4" type="number" inputmode="decimal" step="any" value="0">`,()=>write([[`INSERT INTO items(name,unit,category,min_stock) VALUES($1,$2,$3,$4::float8)`,[need(V("a1"),"Item name is required."),V("a2")||"Nos",V("a3"),parseFloat(V("a4"))||0]]])); }
+function vAssign(){ simpleForm("Assign Site",c=>`<label>Site *</label><select id="a1">${opts(c.s.map(s=>({v:s.id,t:`${s.pn} › ${s.name}${s.svn?" (now: "+s.svn+")":""}`})),"","Select site…")}</select><label>Supervisor *</label><select id="a2">${opts(c.v.map(s=>({v:s.id,t:s.name})),"","Select supervisor…")}</select><label>From date</label><input id="a3" type="date" value="${today()}">`,async()=>{ const s=need(V("a1"),"Please select the site."),v=need(V("a2"),"Please select the supervisor."),d=need(V("a3"),"Please enter the date.");
+  const cur=await q(`SELECT supervisor_id,from_date FROM assignments WHERE site_id=$1::bigint AND to_date IS NULL`,[s]);
+  if(cur[0]&&cur[0].supervisor_id===v) throw new Error("This site is already assigned to that supervisor.");
+  if(cur[0]&&cur[0].from_date>d) throw new Error("The new date cannot be earlier than the current assignment ("+dmy(cur[0].from_date)+").");
+  await write([[`UPDATE assignments SET to_date=$2 WHERE site_id=$1::bigint AND to_date IS NULL`,[s,d]],[`INSERT INTO assignments(site_id,supervisor_id,from_date) VALUES($1::bigint,$2::bigint,$3)`,[s,v,d]]]); },
+  async()=>{ const L=await loadLookups(); return {s:L.sites,v:L.sups}; }); }
+
+async function vSettings(){ setTitle("Database & settings"); loading(); guard(async()=>{ const c=parseConn(CONN); const co=await q(`SELECT value FROM settings WHERE key='company'`);
+  main.innerHTML=`<div class="card"><div class="muted sm">Connected to</div><div class="t" style="word-break:break-all">${esc(c.host)}</div><div class="muted sm">Database: ${esc(c.db)} — shared live with the Windows program and every other phone.</div></div>
+  <div class="card"><label>Company name</label><input id="co" value="${esc(co[0]?.value||"")}"><button class="btn alt" id="cs">Save name</button></div>
+  <div class="card"><button class="btn del" id="out" style="margin:0">Disconnect this phone</button><p class="muted sm">This only removes the saved connection from this phone. No data is deleted.</p></div>`;
+  $("#cs").onclick=async()=>{ try{ await q(`INSERT INTO settings(key,value) VALUES('company',$1) ON CONFLICT(key) DO UPDATE SET value=excluded.value`,[$("#co").value.trim()]); toast("Saved ✓"); }catch(e){ toast(friendly(e),1); } };
+  $("#out").onclick=()=>{ if(confirm("Disconnect this phone from the database?")){ LS.removeItem("neon_conn"); CONN=""; vSetup(); } }; }); }
+
+/* ============ boot ============ */
+try{ const mf={name:"Site Inventory",short_name:"Inventory",display:"standalone",start_url:".",background_color:"#0f4c81",theme_color:"#0f4c81",icons:[{src:"data:image/svg+xml,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="#0f4c81"/><path d="M20 40l30-18 30 18v34L50 90 20 74z" fill="#fff"/></svg>'),sizes:"512x512",type:"image/svg+xml"}]}; const l=document.createElement("link"); l.rel="manifest"; l.href="data:application/manifest+json,"+encodeURIComponent(JSON.stringify(mf)); document.head.appendChild(l);}catch(e){}
+if(CONN){ try{ parseConn(CONN); start(); }catch(e){ vSetup(friendly(e)); } } else vSetup();
+</script>
+</body>
+</html>
